@@ -2,12 +2,19 @@ import { createAsyncThunk } from "@reduxjs/toolkit"
 import axiosClient from "../axiosClient"
 import type { GuestUser, User } from "./Userslice"
 import {     type NavigateFunction } from "react-router-dom"
+import type { FormEvent } from "react"
 
 const ax = axiosClient()
 
-export const register = createAsyncThunk<void,GuestUser,{rejectValue: string}>("users/register", async(guest: GuestUser , thunk)=>{
+export const register = createAsyncThunk<void,FormEvent<HTMLFormElement>,{rejectValue: string}>("users/register", async(e: FormEvent<HTMLFormElement> , thunk)=>{
     try {
-        const res = await ax.post("auth/register", guest)
+        const formdata = new FormData(e.currentTarget); 
+
+        formdata.append("last_seen", new Date().toISOString());
+
+        const res = await ax.post("auth/register", formdata, {
+        headers: { "Content-Type": "multipart/form-data" }
+    });
         return thunk.fulfillWithValue(res.data);
     } catch (error: any) {
         return thunk.rejectWithValue(error.response?.data?.message ?? "Error in register"

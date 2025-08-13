@@ -3,6 +3,7 @@ import Home from "./Home";
 import { useParams } from "react-router-dom";
 import { useAppContext } from "../../appContext";
 import axiosClient from "../../axiosClient";
+import { get_time_diff } from "./feature";
 
 export default function Chat() {
   const { ID } = useParams<string>();
@@ -66,10 +67,38 @@ export default function Chat() {
 
       {/* Chat section */}
       <main className="flex-1 flex flex-col">
-        {/* Chat header */}
-        <div className="p-4 border-b bg-white flex items-center justify-between">
-          <h2 className="text-lg font-bold">Chat with user ID: {ID}</h2>
-        </div>
+       {/* Chat header */}
+<div className="p-4 border-b bg-white flex items-center justify-between">
+  {/* Left: Avatar + User info */}
+  <div className="flex items-center space-x-3">
+    <img
+      src={`http://localhost:5228/uploads/${currentUser.photo}`}
+      alt={currentUser.username}
+      className="w-10 h-10 rounded-full object-cover"
+    />
+    <div className="flex flex-col">
+      <span className="font-semibold text-gray-800">{currentUser.username}</span>
+      <span className="text-xs text-gray-500">
+        {get_time_diff(currentUser.last_seen)}
+      </span>
+    </div>
+  </div>
+
+  {/* Right: Actions (optional) */}
+  <div className="flex items-center space-x-3">
+    {/* Example icons */}
+    <button className="text-gray-400 hover:text-gray-600">
+      <i className="fas fa-phone"></i>
+    </button>
+    <button className="text-gray-400 hover:text-gray-600">
+      <i className="fas fa-video"></i>
+    </button>
+    <button className="text-gray-400 hover:text-gray-600">
+      <i className="fas fa-ellipsis-v"></i>
+    </button>
+  </div>
+</div>
+
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">

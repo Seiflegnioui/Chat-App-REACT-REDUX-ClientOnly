@@ -5,12 +5,18 @@ import { index, login, register } from "./UserThinks";
 
 export interface GuestUser  {
     email:string,
+    photo:File,
+    username:string,
     password: string,
+    last_seen: string,
 }
 
 export type User = {
     id: number,
     email: string,
+    username: string,
+    photo: string,
+    last_seen: string,
     role: number
 }
 
