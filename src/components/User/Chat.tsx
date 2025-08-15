@@ -8,23 +8,35 @@ import { get_time_diff } from "./feature";
 export default function Chat() {
   const { ID } = useParams<string>();
   const ax = axiosClient();
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
   const [Messages, setMessages] = useState<any>([]);
   const [content, setContent] = useState<any>();
+  const [UnseenMsgs, setUnseenMsgs] = useState<[]>();
   // const [User, setUser] = useState<any>();
   const {
     StartConversation,
     LeaveConversation,
-    currentUser,
     connection,
     SendMessageSignal,
   } = useAppContext();
 
   useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await ax.get("/auth/current");
+        await StartConversation(ID || "");
+        setCurrentUser(res.data);
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+    fetchUser();
     const handler = (msg: any) => {
       console.log("event received:", msg);
       setMessages((p: any) => [...p, msg]);
     };
     connection.on("ReceiveMessage", handler);
+
     const getAll = async () => {
       try {
         const { data } = await ax.get(`/message/all/${ID}`);
@@ -34,7 +46,6 @@ export default function Chat() {
       } catch (error) {}
     };
     getAll();
-    StartConversation(ID || "");
     return () => {
       connection.off("ReceiveMessage", handler);
       LeaveConversation(ID || "");
@@ -67,10 +78,10 @@ export default function Chat() {
 
       {/* Chat section */}
       <main className="flex-1 flex flex-col">
-       {/* Chat header */}
-<div className="p-4 border-b bg-white flex items-center justify-between">
-  {/* Left: Avatar + User info */}
-  <div className="flex items-center space-x-3">
+        {/* Chat header */}
+        <div className="p-4 border-b bg-white flex items-center justify-between">
+          {/* Left: Avatar + User info */}
+          {/* <div className="flex items-center space-x-3">
     <img
       src={`http://localhost:5228/uploads/${currentUser.photo}`}
       alt={currentUser.username}
@@ -82,59 +93,57 @@ export default function Chat() {
         {get_time_diff(currentUser.last_seen)}
       </span>
     </div>
-  </div>
+  </div> */}
 
-  {/* Right: Actions (optional) */}
-  <div className="flex items-center space-x-3">
-    {/* Example icons */}
-    <button className="text-gray-400 hover:text-gray-600">
-      <i className="fas fa-phone"></i>
-    </button>
-    <button className="text-gray-400 hover:text-gray-600">
-      <i className="fas fa-video"></i>
-    </button>
-    <button className="text-gray-400 hover:text-gray-600">
-      <i className="fas fa-ellipsis-v"></i>
-    </button>
-  </div>
-</div>
-
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
-          {Messages.map((msg: any, idx: number) => {
-            const isCurrentUser = msg.senderId === currentUser?.id;
-            console.log(
-              "msg id: ",
-              msg.id,
-              " sender id  : ",
-              msg.senderId,
-              " my id : ",
-              currentUser?.id
-            );
-
-            return (
-              <div
-                key={idx}
-                className={`flex ${
-                  isCurrentUser ? "justify-end" : "justify-start"
-                }`}
-              >
-                <div
-                  className={`${
-                    isCurrentUser ? "bg-blue-500 text-white" : "bg-white"
-                  } px-4 py-2 rounded-2xl shadow text-sm max-w-xs`}
-                >
-                  {msg.content}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* More messages here */}
+          {/* Right: Actions (optional) */}
+          <div className="flex items-center space-x-3">
+            {/* Example icons */}
+            <button className="text-gray-400 hover:text-gray-600">
+              <i className="fas fa-phone"></i>
+            </button>
+            <button className="text-gray-400 hover:text-gray-600">
+              <i className="fas fa-video"></i>
+            </button>
+            <button className="text-gray-400 hover:text-gray-600">
+              <i className="fas fa-ellipsis-v"></i>
+            </button>
+          </div>
         </div>
+        {currentUser && (
+          <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50">
+            {Messages.map((msg: any, idx: number) => {
+              const isCurrentUser = msg.senderId === currentUser?.id;
+              console.log(
+                "msg id: ",
+                msg.id,
+                " sender id  : ",
+                msg.senderId,
+                " my id : ",
+                currentUser?.id
+              );
 
-        {/* Message input */}
+              return (
+                <div
+                  key={idx}
+                  className={`flex ${
+                    isCurrentUser ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`${
+                      isCurrentUser ? "bg-blue-500 text-white" : "bg-white"
+                    } px-4 py-2 rounded-2xl shadow text-sm max-w-xs`}
+                  >
+                    {msg.content}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* More messages here */}
+          </div>
+        )}
+
         <form
           onSubmit={(e) => sendMessage(e)}
           className="p-4 border-t bg-white flex items-center gap-2"

@@ -14,12 +14,10 @@ import {
 import axiosClient from "./axiosClient";
 
 interface AppContextType {
-  global: string;
-  setGlobal: (value: string) => void;
   StartConversation: (ID: string) => Promise<void>;
   LeaveConversation: (ID: string) => Promise<void>;
   SendMessageSignal: (conv: string | undefined ,data : any) => Promise<void>;
-  currentUser : any | null,
+  setConnection : (hub:HubConnection)=>void ,
   connection: HubConnection
 
 }
@@ -28,14 +26,14 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
 
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
-  const ax = axiosClient()
+  // const [currentUser, setCurrentUser] = useState<any | null>(null);
+  // const ax = axiosClient()
 
  
   // useMemo is a React Hook that memoizes (remembers) the result of a function between renders. It only recomputes 
   // the value when its dependencies change.
 
-  const connection = useMemo(() => {
+  const InitConnection = useMemo(() => {
     return new HubConnectionBuilder()
       .withUrl("ws://localhost:5228/chat", {
         accessTokenFactory: () => localStorage.getItem("TOKEN") ?? "",
@@ -46,43 +44,14 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       .build();
   }, []);
 
-  const [connectionId, setConnectionId] = useState<string>("");
-  const [global, setGlobal] = useState<string>("");
+  const [connection, setConnection] = useState<HubConnection>(InitConnection);
 
-  useEffect(() => {
-    const start = async () => {
-      try {
-        connection.on("getMyConnectionId", (id) => {
-          setConnectionId(id);
-          console.log("Received connectionId from server:", id);
-        });
-
-        await connection.start();
-        console.log(
-          "SignalR connected with connectionId:",
-          connection.connectionId
-        );
-      } catch (error) {
-        console.error("SignalR Connection Failed", error);
-      }
-    };
-    start();
-
-    const fetchUser = async () => {
-      try {
-        const res = await ax.get("/auth/current");
-        setCurrentUser(res.data);
-      } catch {
-        setCurrentUser(null);
-      }
-    };
-
-    fetchUser();
-
-    return () => {
-      connection.stop().catch(console.error);
-    };
-  }, [connection]);
+useEffect(()=>{
+  connection.on("getMyConnectionId",(str)=>{
+    console.log(str);
+    
+  })
+},[connection])
 
   const StartConversation = async (ID: string) => {
     try {
@@ -129,7 +98,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 
   return (
     <AppContext.Provider
-      value={{ global, setGlobal, StartConversation, LeaveConversation,SendMessageSignal,currentUser,connection }}
+      value={{  StartConversation, LeaveConversation,SendMessageSignal,connection,setConnection }}
     >
       {children}
     </AppContext.Provider>
