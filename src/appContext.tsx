@@ -18,7 +18,9 @@ interface AppContextType {
   LeaveConversation: (ID: string) => Promise<void>;
   SendMessageSignal: (conv: string | undefined ,data : any) => Promise<void>;
   setConnection : (hub:HubConnection)=>void ,
-  connection: HubConnection
+  connection: HubConnection,
+  CurrConv: number,
+  setCurrConv :(id : number)=> void;
 
 }
 
@@ -45,6 +47,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const [connection, setConnection] = useState<HubConnection>(InitConnection);
+  const [CurrConv, setCurrConv] = useState<number>(0);
 
 useEffect(()=>{
   connection.on("getMyConnectionId",(str)=>{
@@ -98,7 +101,7 @@ useEffect(()=>{
 
   return (
     <AppContext.Provider
-      value={{  StartConversation, LeaveConversation,SendMessageSignal,connection,setConnection }}
+      value={{  StartConversation, LeaveConversation,SendMessageSignal,connection,setConnection,CurrConv,setCurrConv }}
     >
       {children}
     </AppContext.Provider>
