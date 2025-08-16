@@ -1,7 +1,6 @@
 import { useState } from "react"
-import type { GuestUser } from "../../features/Userslice"
 import { useDispatch } from "react-redux"
-import type{ AppDispatch } from "../../store"
+import type { AppDispatch } from "../../store"
 import { login } from "../../features/UserThinks"
 import { useNavigate } from "react-router-dom"
 
@@ -13,53 +12,90 @@ export default function Login() {
   const dispatch = useDispatch<AppDispatch>();
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // You can dispatch login action here
-    const guest :GuestUser = { email, password }
-    dispatch(login({guest,navigate}))
+    const guest: any = { email, password }
+    dispatch(login({ guest, navigate }))
   }
 
   return (
-    <div className="w-full max-w-md mx-auto mt-10 p-6 border rounded-lg shadow-md bg-white">
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-700">Login</h2>
+    <div className="w-full max-w-md mx-auto mt-10 p-8 bg-white">
+      <div className="mb-8 text-center">
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Welcome back</h2>
+        <p className="text-gray-500">Sign in to your account</p>
+      </div>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-600 mb-1">
-            Email
-          </label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="relative">
           <input
             type="email"
             id="email"
             required
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your email"
+            className="w-full px-0 py-3 border-0 border-b border-gray-300 focus:border-blue-500 focus:outline-none focus:ring-0 transition-colors peer"
+            placeholder=" "
           />
+          <label 
+            htmlFor="email" 
+            className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-3.5 peer-focus:-top-3.5 peer-focus:text-gray-500 peer-focus:text-sm"
+          >
+            Email address
+          </label>
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-600 mb-1">
-            Password
-          </label>
+        <div className="relative">
           <input
             type="password"
             id="password"
             required
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your password"
+            className="w-full px-0 py-3 border-0 border-b border-gray-300 focus:border-blue-500 focus:outline-none focus:ring-0 transition-colors peer"
+            placeholder=" "
           />
+          <label 
+            htmlFor="password" 
+            className="absolute left-0 -top-3.5 text-gray-500 text-sm transition-all peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-placeholder-shown:top-3.5 peer-focus:-top-3.5 peer-focus:text-gray-500 peer-focus:text-sm"
+          >
+            Password
+          </label>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <input
+              id="remember-me"
+              name="remember-me"
+              type="checkbox"
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-500">
+              Remember me
+            </label>
+          </div>
+
+          <div className="text-sm">
+            <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+              Forgot password?
+            </a>
+          </div>
         </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white py-3 rounded-md hover:shadow-md transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          Login
+          Sign in
         </button>
       </form>
+
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-500">
+          Don't have an account?{' '}
+          <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+            Sign up
+          </a>
+        </p>
+      </div>
     </div>
   )
 }

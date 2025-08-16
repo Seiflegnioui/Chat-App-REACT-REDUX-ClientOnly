@@ -16,9 +16,15 @@ export default function Home() {
   const { setConnection } = useAppContext();
   const [UnseenMsgs, setUnseenMsgs] = useState<any[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState(""); // New state for search
 
   const { users, loading, error } = useSelector(
     (state: RootState) => state.users
+  );
+
+  // Filter users based on search query
+  const filteredUsers = users.filter(user =>
+    user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const connection = useMemo(() => {
@@ -42,9 +48,9 @@ export default function Home() {
         console.log("SignalR Connected");
 
         const res = await ax.get("/auth/current");
-        setTimeout(async ()=>{
+        setTimeout(async () => {
           await connection.invoke("StartInboxConnection", res.data.id);
-        },5000)
+        }, 5000);
         setCurrentUser(res.data);
       } catch (err) {
         console.error("SignalR connection failed: ", err);
@@ -56,16 +62,24 @@ export default function Home() {
       console.log("New message received:", msg);
       setUnseenMsgs((prev) => [...prev, msg]);
       // Also update conversations to show latest message
-      setConversations(prev => {
-        const existingConv = prev.find(c => c.id === msg.conversationId);
+      setConversations((prev) => {
+        const existingConv = prev.find((c) => c.id === msg.conversationId);
         if (existingConv) {
-          return prev.map(c => 
-            c.id === msg.conversationId 
-              ? {...c, lastMessage: msg, updatedAt: new Date().toISOString()} 
-              : c
-          ).sort((a, b) => 
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-          );
+          return prev
+            .map((c) =>
+              c.id === msg.conversationId
+                ? {
+                    ...c,
+                    lastMessage: msg,
+                    updatedAt: new Date().toISOString(),
+                  }
+                : c
+            )
+            .sort(
+              (a, b) =>
+                new Date(b.updatedAt).getTime() -
+                new Date(a.updatedAt).getTime()
+            );
         }
         return prev;
       });
@@ -79,24 +93,45 @@ export default function Home() {
     // };
   }, [dispatch, connection]);
 
-  // const fetchConversations = async () => {
-  //   try {
-  //     const { data } = await ax.get("/conversation");
-  //     setConversations(data);
-  //   } catch (error) {
-  //     console.error("Failed to fetch conversations", error);
-  //   }
-  // };
-
   const get_number_of_unseen = (id: number) => {
     return UnseenMsgs.filter((m: any) => m.senderId === id).length;
   };
 
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen">
-      {/* Instagram-like header */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-4">
-        <h1 className="text-xl font-semibold text-center">Chats</h1>
+      {/* Instagram-like header with search */}
+      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+        <div className="p-4">
+          <h1 className="text-xl font-semibold text-center">Chats</h1>
+        </div>
+        
+        {/* Modern search bar */}
+        <div className="px-4 pb-3">
+  <div className="relative border-b-2 border-gray-200 focus-within:border-blue-500 transition-colors duration-200">
+    <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none">
+      <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+    </div>
+    <input
+      type="text"
+      className="block w-full pl-8 pr-8 py-3 bg-transparent focus:outline-none focus:ring-0"
+      placeholder="Search messages"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+    />
+    {searchQuery && (
+      <button
+        onClick={() => setSearchQuery("")}
+        className="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    )}
+  </div>
+</div>
       </div>
 
       {loading && (
@@ -104,7 +139,7 @@ export default function Home() {
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       )}
-      
+
       {error && (
         <div className="p-4 bg-red-100 text-red-700 rounded-md mx-4 my-2">
           Error: {error}
@@ -112,12 +147,12 @@ export default function Home() {
       )}
 
       <ul className="divide-y divide-gray-100">
-        {users.map((user) => {
+        {filteredUsers.map((user) => {
           const unseenCount = get_number_of_unseen(user.id);
-          const conversation = conversations.find(c => 
+          const conversation = conversations.find((c) =>
             c.participants.some((p: any) => p.id === user.id)
           );
-          
+
           return (
             <li
               key={user.id}
@@ -128,8 +163,9 @@ export default function Home() {
                     ReceiverId: user.id,
                     last_join: new Date().toISOString(),
                   });
-                  // Clear unseen messages for this user when opening chat
-                  setUnseenMsgs(prev => prev.filter(m => m.senderId !== user.id));
+                  setUnseenMsgs((prev) =>
+                    prev.filter((m) => m.senderId !== user.id)
+                  );
                   navigate(`/user/chat/${data}`);
                 } catch (error) {
                   console.error("Conversation creation failed", error);
@@ -142,20 +178,25 @@ export default function Home() {
                   alt={user.username}
                   className="w-14 h-14 rounded-full object-cover mr-3 border-2 border-gray-200"
                 />
-                {/* {user.isOnline && (
-                  <div className="absolute bottom-0 right-3 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                )} */}
               </div>
 
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center relative">
                   <p className="font-semibold text-gray-900 truncate">
                     {user.username}
                   </p>
-                  <p className="text-xs text-gray-500 ml-2 whitespace-nowrap">
-                    {get_time_diff(user.last_seen,"online")}
-                  </p>
+
+                  <div className="flex items-center ml-2 text-xs text-gray-500 whitespace-nowrap relative">
+                    {get_time_diff(user.last_seen, "online") === "online" ? (
+                      <span className="relative flex h-3 w-3">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 border-2 border-white"></span>
+                      </span>
+                    ) : (
+                      <span>{get_time_diff(user.last_seen, "online")}</span>
+                    )}
+                  </div>
                 </div>
+
                 <p className="text-sm text-gray-500 truncate">
                   {conversation?.lastMessage?.content || "No messages yet"}
                 </p>
