@@ -21,6 +21,7 @@ interface AppContextType {
   connection: HubConnection,
   CurrConv: number,
   setCurrConv :(id : number)=> void;
+  currentUser: any;
 
 }
 
@@ -28,8 +29,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppContextProvider({ children }: { children: ReactNode }) {
 
-  // const [currentUser, setCurrentUser] = useState<any | null>(null);
-  // const ax = axiosClient()
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const ax = axiosClient()
 
  
   // useMemo is a React Hook that memoizes (remembers) the result of a function between renders. It only recomputes 
@@ -52,6 +53,18 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
 useEffect(()=>{
   connection.on("getMyConnectionId",(str)=>{
     console.log(str);
+
+    const fetchUser = async () => {
+      try {
+        const res = await ax.get("/auth/current");
+        
+
+        setCurrentUser(res.data);
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+    fetchUser();
     
   })
 },[connection])
@@ -101,7 +114,7 @@ useEffect(()=>{
 
   return (
     <AppContext.Provider
-      value={{  StartConversation, LeaveConversation,SendMessageSignal,connection,setConnection,CurrConv,setCurrConv }}
+      value={{  StartConversation, LeaveConversation,SendMessageSignal,connection,setConnection,CurrConv,setCurrConv,currentUser }}
     >
       {children}
     </AppContext.Provider>

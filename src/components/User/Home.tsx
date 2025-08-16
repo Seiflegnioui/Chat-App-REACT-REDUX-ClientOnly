@@ -15,7 +15,7 @@ export default function Home() {
   const [currentUser, setCurrentUser] = useState<any | null>(null);
   const { setConnection } = useAppContext();
   const [UnseenMsgs, setUnseenMsgs] = useState<any[]>([]);
-  const [conversations, setConversations] = useState<any[]>([]);
+  // const [conversations, setConversations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState(""); // New state for search
 
   const { users, loading, error } = useSelector(
@@ -23,7 +23,7 @@ export default function Home() {
   );
 
   // Filter users based on search query
-  const filteredUsers = users.filter(user =>
+  const filteredUsers = users.filter((user) =>
     user.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -42,15 +42,29 @@ export default function Home() {
     dispatch(index());
     // fetchConversations();
 
+    const fetchUser = async () => {
+      try {
+        const res = await ax.get("/auth/current");
+        const { data } = await ax.get(`/message/unseen/${res.data.id}`);
+        console.log(res);
+        console.log(data);
+        setUnseenMsgs((prev: any) => [...prev, ...data]);
+
+        setCurrentUser(res.data);
+      } catch {
+        setCurrentUser(null);
+      }
+    };
+    fetchUser();
+
     const startConnection = async () => {
       try {
         await connection.start();
         console.log("SignalR Connected");
 
         const res = await ax.get("/auth/current");
-        setTimeout(async () => {
-          await connection.invoke("StartInboxConnection", res.data.id);
-        }, 5000);
+        await connection.invoke("StartInboxConnection", res.data.id);
+       
         setCurrentUser(res.data);
       } catch (err) {
         console.error("SignalR connection failed: ", err);
@@ -61,36 +75,31 @@ export default function Home() {
     connection.on("InboxReceiveMessage", (msg: any) => {
       console.log("New message received:", msg);
       setUnseenMsgs((prev) => [...prev, msg]);
-      // Also update conversations to show latest message
-      setConversations((prev) => {
-        const existingConv = prev.find((c) => c.id === msg.conversationId);
-        if (existingConv) {
-          return prev
-            .map((c) =>
-              c.id === msg.conversationId
-                ? {
-                    ...c,
-                    lastMessage: msg,
-                    updatedAt: new Date().toISOString(),
-                  }
-                : c
-            )
-            .sort(
-              (a, b) =>
-                new Date(b.updatedAt).getTime() -
-                new Date(a.updatedAt).getTime()
-            );
-        }
-        return prev;
-      });
+      // setConversations((prev) => {
+      //   const existingConv = prev.find((c) => c.id === msg.conversationId);
+      //   if (existingConv) {
+      //     return prev
+      //       .map((c) =>
+      //         c.id === msg.conversationId
+      //           ? {
+      //               ...c,
+      //               lastMessage: msg,
+      //               updatedAt: new Date().toISOString(),
+      //             }
+      //           : c
+      //       )
+      //       .sort(
+      //         (a, b) =>
+      //           new Date(b.updatedAt).getTime() -
+      //           new Date(a.updatedAt).getTime()
+      //       );
+      //   }
+      //   return prev;
+      // });
     });
 
     startConnection();
     setConnection(connection);
-
-    // return () => {
-    //   connection.off("InboxReceiveMessage");
-    // };
   }, [dispatch, connection]);
 
   const get_number_of_unseen = (id: number) => {
@@ -99,39 +108,57 @@ export default function Home() {
 
   return (
     <div className="max-w-md mx-auto bg-white min-h-screen">
-      {/* Instagram-like header with search */}
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
         <div className="p-4">
           <h1 className="text-xl font-semibold text-center">Chats</h1>
         </div>
-        
-        {/* Modern search bar */}
+
         <div className="px-4 pb-3">
-  <div className="relative border-b-2 border-gray-200 focus-within:border-blue-500 transition-colors duration-200">
-    <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none">
-      <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-    </div>
-    <input
-      type="text"
-      className="block w-full pl-8 pr-8 py-3 bg-transparent focus:outline-none focus:ring-0"
-      placeholder="Search messages"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-    />
-    {searchQuery && (
-      <button
-        onClick={() => setSearchQuery("")}
-        className="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-gray-600 transition-colors"
-      >
-        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    )}
-  </div>
-</div>
+          <div className="relative border-b-2 border-gray-200 focus-within:border-blue-500 transition-colors duration-200">
+            <div className="absolute inset-y-0 left-0 flex items-center pointer-events-none">
+              <svg
+                className="h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-8 pr-8 py-3 bg-transparent focus:outline-none focus:ring-0"
+              placeholder="Search messages"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {loading && (
@@ -147,11 +174,24 @@ export default function Home() {
       )}
 
       <ul className="divide-y divide-gray-100">
-        {filteredUsers.map((user) => {
+        {filteredUsers
+    .slice() // copy so you don’t mutate original array
+    .sort((a, b) => {
+      const unseenA = get_number_of_unseen(a.id);
+      const unseenB = get_number_of_unseen(b.id);
+
+      // sort descending: users with unseen messages come first
+      if (unseenB !== unseenA) {
+        return unseenB - unseenA;
+      }
+
+      // optional: secondary sort by username or last_seen if equal
+      return a.username.localeCompare(b.username);
+    }).map((user) => {
           const unseenCount = get_number_of_unseen(user.id);
-          const conversation = conversations.find((c) =>
-            c.participants.some((p: any) => p.id === user.id)
-          );
+          // const conversation = conversations.find((c) =>
+          //   c.participants.some((p: any) => p.id === user.id)
+          // );
 
           return (
             <li
@@ -186,10 +226,12 @@ export default function Home() {
                     {user.username}
                   </p>
 
-                  <div className="flex items-center ml-2 text-xs text-gray-500 whitespace-nowrap relative">
+                  <div className="flex items-center ml-2 text-xs text-gray-500 whitespace-nowrap">
                     {get_time_diff(user.last_seen, "online") === "online" ? (
-                      <span className="relative flex h-3 w-3">
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-green-500 border-2 border-white"></span>
+                      <span className="flex items-center space-x-2">
+                        {/* Green dot */}
+                        <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                        <p>online</p>
                       </span>
                     ) : (
                       <span>{get_time_diff(user.last_seen, "online")}</span>
@@ -198,7 +240,7 @@ export default function Home() {
                 </div>
 
                 <p className="text-sm text-gray-500 truncate">
-                  {conversation?.lastMessage?.content || "No messages yet"}
+                  No messages yet
                 </p>
               </div>
 

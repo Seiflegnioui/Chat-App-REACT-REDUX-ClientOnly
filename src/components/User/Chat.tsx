@@ -61,6 +61,11 @@ export default function Chat() {
     };
 
     connection.on("SeenUpdate", seenHandler);
+
+    connection.on("OnTyping", ()=>{
+      console.log("typing ...");
+      
+    });
     const getAll = async () => {
       try {
         const { data } = await ax.get(`/message/all/${ID}`);
@@ -97,7 +102,6 @@ export default function Chat() {
       <main className="flex-1 flex flex-col">
         <div className="p-4 border-b bg-white flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {/* Empty header as requested */}
           </div>
         </div>
 
@@ -158,7 +162,7 @@ export default function Chat() {
                           {msg.seen_time ? (
                             <span className="text-blue-500">✓✓</span>
                           ) : (
-                            <span className="text-gray-400">✓</span> // delivered
+                            <span className="text-gray-400">✓</span> 
                           )}
                         </span>
                       </div>
@@ -176,7 +180,7 @@ export default function Chat() {
         >
           <input
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={async (e) => {setContent(e.target.value); await connection.invoke("OnTyping",ID) }}
             type="text"
             placeholder="Message..."
             className="flex-1 px-4 py-2 border rounded-full bg-gray-100 focus:outline-none"
